@@ -35,12 +35,12 @@ AzuraJS exporta todos os tipos necessários:
 import type {
   RequestServer,
   ResponseServer,
-  ConfigTypes,
-  RequestHandler,
-  CORSOptions,
-  RateLimitOptions,
-  CookieOptions
 } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
+import type { RequestHandler } from "azurajs/types";
+import type { CORSOptions } from "azurajs/cors";
+import type { RateLimitOptions } from "azurajs/rate-limit";
+import type { CookieOptions } from "azurajs/cookies";
 ```
 
 ## Tipagem de Request e Response 🔍
@@ -66,6 +66,9 @@ interface RequestServer {
 **Exemplo:**
 
 ```typescript
+import { Get, Req } from "azurajs/decorators";
+import type { RequestServer } from "azurajs";
+
 @Get("/profile")
 getProfile(@Req() req: RequestServer) {
   const userId: string = req.user?.id;
@@ -336,7 +339,8 @@ getUser(@Param("id") id: string): PublicUser {
 Tipagem completa para middleware:
 
 ```typescript
-import type { RequestServer, ResponseServer, RequestHandler } from "azurajs";
+import type { RequestServer, ResponseServer } from "azurajs";
+import type { RequestHandler } from "azurajs/types";
 
 const authMiddleware: RequestHandler = (req, res, next) => {
   const token = req.headers.authorization;
@@ -384,7 +388,7 @@ const roleMiddleware = (allowedRoles: string[]): RequestHandler => {
 Tipagem para configuração da aplicação:
 
 ```typescript
-import type { ConfigTypes } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
 
 const config: ConfigTypes = {
   environment: "production",

@@ -2,14 +2,44 @@
 
 This directory contains example applications demonstrating various features of AzuraJS.
 
+> **Note:** These examples import from `../package/src` (local development). When using AzuraJS in your own project, import from `"azurajs"` instead.
+
 ## Getting Started
+
+### Using Node.js / Bun (default)
 
 ```bash
 bun install
 bun run start
 ```
 
+### Using Bun.serve
+
+```bash
+bun run bun-server.ts
+```
+
+### Using Deno
+
+```bash
+deno run --allow-net --allow-read deno-server.ts
+```
+
 The server will start at `http://localhost:3000`
+
+## Available Examples
+
+### 1. Standard Server (`index.ts`)
+Default AzuraJS server using built-in Node.js HTTP server with decorators and controllers.
+
+### 2. Bun Server (`bun-server.ts`)
+Example using AzuraJS with Bun's native `Bun.serve` for maximum performance.
+
+### 3. Deno Server (`deno-server.ts`)
+Example using AzuraJS with Deno's `Deno.serve` runtime.
+
+### 4. Cloudflare Worker (`cloudflare-worker.ts`)
+Example deploying AzuraJS to Cloudflare Workers edge network.
 
 ## Available Routes
 

@@ -37,7 +37,7 @@ The rate limiter tracks requests by IP address:
 Create custom rate limiting middleware:
 
 ```typescript
-import type { RequestHandler } from "azurajs";
+import type { RequestHandler } from "azurajs/types";
 
 interface RateLimitStore {
   count: number;

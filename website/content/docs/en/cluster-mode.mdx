@@ -1,117 +1,133 @@
 ---
 title: Cluster Mode
-description: Scale your application across multiple CPU cores
+description: Scale your application across multiple CPU cores automatically
 icon: Monitor
 ---
 
 # Cluster Mode 🖥️
 
-Take advantage of multi-core systems by running your application in cluster mode.
+AzuraJS provides built-in cluster mode support to automatically scale your application across all available CPU cores with zero manual configuration.
 
 ## Enable Cluster Mode ⚡
 
-Enable in configuration:
+Simply enable cluster mode in your configuration file and AzuraJS handles everything automatically:
 
 ```typescript title="azura.config.ts"
+import type { ConfigTypes } from "azurajs/config";
+
 const config: ConfigTypes = {
   server: {
     port: 3000,
     cluster: true,  // Enable cluster mode
   },
 };
+
+export default config;
 ```
 
-When enabled, AzuraJS automatically:
-- Spawns one worker process per CPU core
-- Distributes incoming connections across workers
-- Restarts crashed workers automatically
+That's it! When `cluster: true` is set, AzuraJS automatically:
+- ✅ Detects the number of CPU cores available
+- ✅ Spawns one worker process per CPU core
+- ✅ Distributes incoming connections across workers using round-robin
+- ✅ Automatically restarts crashed workers
+- ✅ Handles graceful shutdown of all workers
+- ✅ Manages inter-process communication
 
 ## How It Works 🔧
 
-```typescript
-import { AzuraClient } from "azurajs";
+No manual cluster code is needed. Your application code remains simple:
+
+```typescript title="index.ts"
+import { AzuraClient, applyDecorators } from "azurajs";
+import { HomeController } from "./controllers/HomeController";
 
 const app = new AzuraClient();
-// If cluster is enabled in config:
-// - Master process forks workers
-// - Each worker runs the server
-// - Load is distributed automatically
+
+applyDecorators(app, [HomeController]);
+
+await app.listen();
 ```
 
-Behind the scenes:
+AzuraJS internally handles all cluster logic based on your configuration. The framework will:
 
-```typescript
-if (cluster.isPrimary) {
-  for (let i = 0; i < os.cpus().length; i++) {
-    cluster.fork();
-  }
-  cluster.on("exit", () => cluster.fork());
-} else {
-  // Worker process runs server
-  app.listen(port);
-}
-```
+1. Create a primary process that manages workers
+2. Fork worker processes (one per CPU core)
+3. Each worker runs your application independently
+4. Load balancing is handled at the OS level
+5. Worker crashes are detected and new workers are spawned automatically
+
+**You don't need to write any cluster code yourself** - AzuraJS manages everything behind the scenes.
 
 ## When to Use Cluster Mode 📊
 
 **Use cluster mode when:**
-- ✅ Running in production
-- ✅ Handling high traffic
-- ✅ CPU-intensive operations
-- ✅ Multi-core server available
+- ✅ Running in production environments
+- ✅ Handling high traffic and concurrent requests
+- ✅ Multi-core server available (2+ cores)
+- ✅ Need improved performance and reliability
+- ✅ Want automatic process recovery
 
 **Don't use cluster mode when:**
-- ❌ Developing locally
-- ❌ Running on single-core systems
-- ❌ Using Docker with orchestration
-- ❌ Debugging issues
+- ❌ Developing locally (single process is easier to debug)
+- ❌ Running on single-core systems (no benefit)
+- ❌ Using container orchestration (Kubernetes, Docker Swarm)
+- ❌ Need to debug specific issues
+- ❌ Running scheduled tasks or cron jobs
 
-## Development vs Production 🌍
+## Environment-Based Configuration 🌍
 
-Conditional cluster mode:
+Enable cluster mode only in production:
 
-```typescript
-const isDev = process.env.NODE_ENV !== "production";
+```typescript title="azura.config.ts"
+const isProduction = process.env.NODE_ENV === "production";
 
 const config: ConfigTypes = {
+  environment: isProduction ? "production" : "development",
   server: {
-    cluster: !isDev,  // Only in production
+    port: 3000,
+    cluster: isProduction,  // Cluster only in production
   },
 };
+
+export default config;
 ```
 
-## Monitoring Workers 👀
+## Complete Configuration Example ⚙️
 
-View worker information:
+```typescript title="azura.config.ts"
+import type { ConfigTypes } from "azurajs/config";
 
-```typescript
-import cluster from "node:cluster";
-import os from "node:os";
+const config: ConfigTypes = {
+  environment: "production",
+  server: {
+    port: process.env.PORT || 3000,
+    cluster: true,              // Enable cluster mode
+    ipHost: false,
+  },
+  logging: {
+    enabled: true,
+    showDetails: true,          // Shows worker process IDs in logs
+  },
+  plugins: {
+    cors: {
+      enabled: true,
+      origins: ["*"],
+      methods: ["GET", "POST", "PUT", "DELETE"],
+    },
+  },
+};
 
-if (cluster.isPrimary) {
-  console.log(`Master process: ${process.pid}`);
-  console.log(`CPU cores: ${os.cpus().length}`);
-  
-  cluster.on("online", (worker) => {
-    console.log(`Worker ${worker.id} (${worker.process.pid}) is online`);
-  });
-  
-  cluster.on("exit", (worker, code, signal) => {
-    console.log(`Worker ${worker.id} died (${code || signal})`);
-    console.log("Starting new worker...");
-    cluster.fork();
-  });
-}
+export default config;
 ```
 
 ## Shared State Considerations 💾
 
-Workers don't share memory. Use external storage for shared state:
+Workers run in separate processes and don't share memory. Use external storage for shared state:
 
 ### ❌ Won't Work Across Workers
 
 ```typescript
-// In-memory cache won't be shared
+// In-memory cache won't be shared between workers
 const cache = new Map();
 
 @Get("/data")
@@ -119,14 +135,14 @@ getData() {
   if (cache.has("key")) {
     return cache.get("key");
   }
-  // ...
+  // This cache is per-worker, not shared!
 }
 ```
 
 ### ✅ Use External Storage
 
 ```typescript
-// Redis for shared cache
+// Redis for shared cache across all workers
 import Redis from "ioredis";
 const redis = new Redis();
 
@@ -136,67 +152,41 @@ async getData() {
   if (cached) {
     return JSON.parse(cached);
   }
-  // ...
+  
+  const data = await fetchData();
+  await redis.set("key", JSON.stringify(data));
+  return data;
 }
 ```
 
-## Graceful Shutdown 🛑
+**Recommended solutions for shared state:**
+- Redis for caching and sessions
+- PostgreSQL/MySQL for persistent data
+- MongoDB for document storage
+- External message queues (RabbitMQ, Kafka)
 
-Handle worker shutdown gracefully:
+## Performance Benefits 📈
 
-```typescript
-if (!cluster.isPrimary) {
-  process.on("SIGTERM", async () => {
-    console.log("Worker shutting down gracefully...");
-    
-    // Close server
-    server.close(() => {
-      console.log("Server closed");
-      process.exit(0);
-    });
-    
-    // Force exit after 30s
-    setTimeout(() => {
-      console.error("Forcing shutdown");
-      process.exit(1);
-    }, 30000);
-  });
-}
-```
+Expected performance improvements with cluster mode:
 
-## Load Balancing ⚖️
-
-Cluster mode uses round-robin load balancing by default:
-
-```typescript
-import cluster from "node:cluster";
-
-if (cluster.isPrimary) {
-  cluster.schedulingPolicy = cluster.SCHED_RR;  // Round-robin (default)
-  // or
-  cluster.schedulingPolicy = cluster.SCHED_NONE;  // OS decides
-}
-```
-
-## Performance Gains 📈
-
-Expected performance improvement:
-
-- **2 cores**: ~1.8x throughput
-- **4 cores**: ~3.5x throughput
-- **8 cores**: ~6-7x throughput
+| CPU Cores | Throughput Increase |
+|-----------|---------------------|
+| 2 cores   | ~1.8x              |
+| 4 cores   | ~3.5x              |
+| 8 cores   | ~6-7x              |
+| 16 cores  | ~12-14x            |
 
 Actual gains depend on:
 - I/O vs CPU-bound operations
 - Operating system
 - Application architecture
+- Network conditions
 
-## Docker and Cluster Mode 🐳
+## Docker and Kubernetes 🐳
 
-When using Docker with orchestration (Kubernetes, Docker Swarm):
+When using container orchestration, disable cluster mode and let the orchestrator handle scaling:
 
-```typescript
-// Disable cluster mode in container
+```typescript title="azura.config.ts"
 const config: ConfigTypes = {
   server: {
     cluster: false,  // Let orchestrator handle scaling
@@ -204,10 +194,9 @@ const config: ConfigTypes = {
 };
 ```
 
-Instead, scale containers:
+Scale containers instead:
 
-```yaml
-# docker-compose.yml
+```yaml title="docker-compose.yml"
 services:
   api:
     image: myapp
@@ -215,70 +204,85 @@ services:
       replicas: 4  # Run 4 containers
 ```
 
-## Worker Communication 📡
+```yaml title="kubernetes-deployment.yml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azurajs-app
+spec:
+  replicas: 4  # Run 4 pods
+  template:
+    spec:
+      containers:
+      - name: app
+        image: myapp
+```
 
-Send messages between master and workers:
+## Monitoring and Logs 👀
 
-```typescript
-import cluster from "node:cluster";
+With `logging.showDetails: true`, AzuraJS logs show worker information:
 
-if (cluster.isPrimary) {
-  // Send to all workers
-  for (const id in cluster.workers) {
-    cluster.workers[id]?.send({ type: "config-update" });
-  }
-} else {
-  // Receive in worker
-  process.on("message", (msg) => {
-    if (msg.type === "config-update") {
-      console.log("Config updated");
-    }
-  });
-}
+```
+[Worker 1] Server listening on port 3000 (PID: 12345)
+[Worker 2] Server listening on port 3000 (PID: 12346)
+[Worker 3] Server listening on port 3000 (PID: 12347)
+[Worker 4] Server listening on port 3000 (PID: 12348)
+```
+
+When a worker crashes and restarts automatically:
+
+```
+[Primary] Worker 2 (PID: 12346) crashed
+[Primary] Starting new worker...
+[Worker 5] Server listening on port 3000 (PID: 12350)
 ```
 
 ## Best Practices ✨
 
 <Callout type="tip">
-  **Enable in production only** - Cluster mode adds complexity for debugging
+  **Enable in production only** - Development is easier with a single process
 </Callout>
 
 <Callout type="tip">
-  **Use external storage** - Redis, databases for shared state
+  **Use external storage** - Redis, databases, or message queues for shared state
 </Callout>
 
 <Callout type="warn">
-  **Test thoroughly** - Behavior differs between single and cluster mode
+  **Test thoroughly** - Behavior may differ between single and cluster mode
 </Callout>
 
 <Callout type="info">
-  **Monitor workers** - Track worker health and restart patterns
+  **Monitor your workers** - Track worker health and restart patterns in production
 </Callout>
 
 ## Troubleshooting 🔍
 
 ### Workers Keep Crashing
 
-Check worker logs:
+Check your application logs to identify the error. Common issues:
+- Uncaught exceptions
+- Memory leaks
+- Database connection issues
+- Missing error handling
 
-```typescript
-cluster.on("exit", (worker, code, signal) => {
-  console.error(`Worker ${worker.id} crashed:`, { code, signal });
-});
-```
+### Inconsistent Behavior Between Requests
 
-### Inconsistent Behavior
+This usually means you're using in-memory state that isn't shared. Solution:
+- Move state to Redis or a database
+- Ensure all data is stored externally
+- Use stateless architecture
 
-Ensure no shared in-memory state between workers.
+### Port Already in Use Error
 
-### Port Already in Use
-
-All workers share the same port - this is normal and expected.
+If you see this error, you might be running multiple instances. Check:
+- No other processes on the same port
+- Only one AzuraJS instance running
+- Configuration file is correct
 
 ## Next Steps 📖
 
 <Cards>
-  <Card title="Performance" href="performance" description="Optimize your application" />
-  <Card title="Configuration" href="configuration" description="Advanced configuration options" />
-  <Card title="Error Handling" href="error-handling" description="Handle errors across workers" />
+  <Card title="Configuration" href="/docs/en/configuration" description="Learn all configuration options" />
+  <Card title="Performance" href="/docs/en/performance" description="Optimize your application further" />
+  <Card title="Error Handling" href="/docs/en/error-handling" description="Handle errors gracefully" />
 </Cards>

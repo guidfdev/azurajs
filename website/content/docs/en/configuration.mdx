@@ -13,7 +13,7 @@ AzuraJS uses a file-based configuration system that supports TypeScript, JSON, a
 Create an `azura.config.ts` file in your project root:
 
 ```typescript title="azura.config.ts"
-import type { ConfigTypes } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
 
 const config: ConfigTypes = {
   environment: "development",
@@ -256,7 +256,7 @@ rateLimit: {
 Use environment variables for different deployment environments:
 
 ```typescript title="azura.config.ts"
-import type { ConfigTypes } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
 
 const isDev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -340,7 +340,7 @@ console.log(`Environment: ${config.environment}`);
 Here's a complete production-ready configuration:
 
 ```typescript title="azura.config.ts"
-import type { ConfigTypes } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
 
 const config: ConfigTypes = {
   environment: "production",

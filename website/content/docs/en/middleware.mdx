@@ -22,7 +22,7 @@ Middleware is a function that executes before your route handler. It has access 
 ### Basic Middleware
 
 ```typescript
-import type { RequestHandler } from "azurajs";
+import type { RequestHandler } from "azurajs/types";
 
 const myMiddleware: RequestHandler = async (req, res, next) => {
   console.log(`${req.method} ${req.url}`);
@@ -76,7 +76,8 @@ app.use(async (req, res, next) => {
 AzuraJS includes a logging middleware:
 
 ```typescript
-import { AzuraClient, createLoggingMiddleware } from "azurajs";
+import { AzuraClient } from "azurajs";
+import { createLoggingMiddleware } from "azurajs/middleware";
 
 const app = new AzuraClient();
 const logger = createLoggingMiddleware(app.getConfig());
@@ -88,8 +89,8 @@ app.use(logger);
 ### Authentication Middleware
 
 ```typescript
-import { HttpError } from "azurajs";
-import type { RequestHandler } from "azurajs";
+import { HttpError } from "azurajs/http-error";
+import type { RequestHandler } from "azurajs/types";
 
 export const authMiddleware: RequestHandler = async (req, res, next) => {
   const token = req.headers.authorization?.replace("Bearer ", "");

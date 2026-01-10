@@ -20,17 +20,21 @@ AzuraJS is designed for performance:
 
 ## Cluster Mode 🖥️
 
-Enable cluster mode for production:
+Simply enable cluster mode in your configuration - AzuraJS handles everything automatically:
 
 ```typescript title="azura.config.ts"
 const config: ConfigTypes = {
   server: {
-    cluster: true,  // Utilize all CPU cores
+    cluster: true,  // AzuraJS automatically uses all CPU cores
   },
 };
 ```
 
 **Performance gain**: ~7x throughput on 8-core systems
+
+**No manual code needed** - AzuraJS automatically creates workers, distributes load, and handles crashes.
+
+See the [Cluster Mode guide](/docs/en/cluster-mode) for complete details.
 
 ## Response Caching 💾
 

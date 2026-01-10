@@ -13,7 +13,8 @@ AzuraJS fornece validação poderosa de dados de entrada usando schemas e DTOs.
 Use `validateSchema` para validar objetos contra schemas customizados.
 
 ```typescript
-import { validateSchema } from "azurajs";
+import { Post } from "azurajs/decorators";
+import { validateSchema } from "azurajs/validators";
 
 const userSchema = {
   name: { type: "string", required: true, minLength: 2 },

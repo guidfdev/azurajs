@@ -13,7 +13,7 @@ Configure CORS (Cross-Origin Resource Sharing) to allow or restrict cross-origin
 Enable CORS in your configuration:
 
 ```typescript title="azura.config.ts"
-import type { ConfigTypes } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
 
 const config: ConfigTypes = {
   plugins: {
@@ -79,7 +79,7 @@ const config: ConfigTypes = {
 Create custom CORS middleware for advanced control:
 
 ```typescript
-import type { RequestHandler } from "azurajs";
+import type { RequestHandler } from "azurajs/types";
 
 export function createCorsMiddleware(options: {
   origins: string[];

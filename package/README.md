@@ -31,6 +31,37 @@ or with Bun:
 bun add azurajs
 ```
 
+## Modular Imports
+
+AzuraJS supports modular imports for tree-shaking and better organization:
+
+```typescript
+// Main package
+import { AzuraClient, applyDecorators } from "azurajs";
+
+// Decorators
+import { Controller, Get, Post, Body, Param } from "azurajs/decorators";
+
+// Middleware
+import { createLoggingMiddleware } from "azurajs/middleware";
+
+// Plugins
+import { cors } from "azurajs/cors";
+import { rateLimit } from "azurajs/rate-limit";
+
+// Utilities
+import { logger } from "azurajs/logger";
+import { HttpError } from "azurajs/http-error";
+import { validateDto } from "azurajs/validators";
+import { parseCookiesHeader } from "azurajs/cookies";
+
+// Config
+import type { ConfigTypes } from "azurajs/config";
+
+// Router
+import { Router } from "azurajs/router";
+```
+
 ## Quick Start
 
 ### 1. Create `azura.config.ts`
@@ -120,6 +151,77 @@ await app.listen();
 
 ```bash
 bun run index.ts
+```
+
+## Alternative: Use with Custom Servers
+
+AzuraJS can be used with **any server** that supports the Web Fetch API, just like Hono! This includes Bun, Deno, Cloudflare Workers, and more.
+
+### Using with Bun.serve
+
+```typescript
+import { AzuraClient } from "azurajs";
+
+const app = new AzuraClient();
+
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from Bun!" });
+});
+
+// Use with Bun's native server
+const server = Bun.serve({
+  port: 3000,
+  fetch: app.fetch.bind(app),
+});
+
+console.log(`Server running on http://localhost:${server.port}`);
+```
+
+### Using with Deno
+
+```typescript
+import { AzuraClient } from "azurajs";
+
+const app = new AzuraClient();
+
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from Deno!" });
+});
+
+// Use with Deno.serve
+Deno.serve({ port: 3000 }, app.fetch.bind(app));
+```
+
+### Using with Cloudflare Workers
+
+```typescript
+import { AzuraClient } from "azurajs";
+
+const app = new AzuraClient();
+
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from Cloudflare!" });
+});
+
+// Export for Cloudflare Workers
+export default {
+  fetch: app.fetch.bind(app),
+};
+```
+
+### Using with Node.js HTTP
+
+```typescript
+import { AzuraClient } from "azurajs";
+
+const app = new AzuraClient();
+
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from Node.js!" });
+});
+
+// Built-in Node.js HTTP server
+await app.listen(3000);
 ```
 
 ## API Reference
@@ -491,7 +593,7 @@ MIT License - see LICENSE file for details
 
 - [GitHub Repository](https://github.com/0xviny/azurajs)
 - [NPM Package](https://www.npmjs.com/package/azurajs)
-- [Documentation](https://azurajs.dev)
+- [Documentation](https://azura.js.org/docs/en)
 - [Examples](https://github.com/0xviny/azurajs/tree/main/examples)
 
 ## Support

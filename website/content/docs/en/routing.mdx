@@ -13,6 +13,8 @@ AzuraJS provides a powerful and flexible routing system based on decorators and 
 Routes are defined using HTTP method decorators on controller methods.
 
 ```typescript
+import { Controller, Get, Param } from "azurajs/decorators";
+
 @Controller("/api/users")
 export class UserController {
   @Get()  // Matches: GET /api/users
@@ -55,6 +57,8 @@ getPost(
 Query parameters are not part of the route path:
 
 ```typescript
+import { Get, Query } from "azurajs/decorators";
+
 // Route: GET /search
 // URL: GET /search?q=john&limit=10
 @Get("/search")
@@ -84,6 +88,8 @@ export class ApiController {
 ### Nested Routes
 
 ```typescript
+import { Controller, Get, Param } from "azurajs/decorators";
+
 @Controller("/api/organizations")
 export class OrgController {
   @Get("/:orgId/teams/:teamId/members")

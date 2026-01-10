@@ -21,6 +21,8 @@ Defines a controller class with an optional base path.
 **Examples:**
 
 ```typescript
+import { Controller } from "azurajs/decorators";
+
 // With prefix
 @Controller("/api/users")
 export class UserController {}
@@ -49,6 +51,8 @@ Define a GET route.
 **Examples:**
 
 ```typescript
+import { Controller, Get } from "azurajs/decorators";
+
 @Controller("/api/users")
 export class UserController {
   @Get()  // GET /api/users
@@ -73,6 +77,8 @@ Define a POST route.
 **Example:**
 
 ```typescript
+import { Post, Body } from "azurajs/decorators";
+
 @Post()  // POST /api/users
 createUser(@Body() data: any) {
   return { id: Date.now(), ...data };
@@ -90,6 +96,8 @@ Define a PUT route for full updates.
 **Example:**
 
 ```typescript
+import { Put, Param, Body } from "azurajs/decorators";
+
 @Put("/:id")  // PUT /api/users/:id
 updateUser(@Param("id") id: string, @Body() data: any) {
   return { id, ...data };

@@ -491,7 +491,7 @@ MIT License - see LICENSE file for details
 
 - [GitHub Repository](https://github.com/0xviny/azurajs)
 - [NPM Package](https://www.npmjs.com/package/azurajs)
-- [Documentation](https://azurajs.dev)
+- [Documentation](https://azura.js.org/docs/en)
 - [Examples](https://github.com/0xviny/azurajs/tree/main/examples)
 
 ## Support

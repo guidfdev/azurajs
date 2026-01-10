@@ -13,6 +13,8 @@ AzuraJS fornece um sistema de roteamento poderoso e flexível baseado em decorat
 Rotas são definidas usando decorators de método HTTP em métodos de controller.
 
 ```typescript
+import { Controller, Get, Param } from "azurajs/decorators";
+
 @Controller("/api/users")
 export class UserController {
   @Get()  // Corresponde: GET /api/users
@@ -55,6 +57,8 @@ getPost(
 Parâmetros de query não fazem parte do caminho da rota:
 
 ```typescript
+import { Get, Query } from "azurajs/decorators";
+
 // Rota: GET /search
 // URL: GET /search?q=john&limit=10
 @Get("/search")
@@ -68,6 +72,8 @@ search(@Query("q") query: string, @Query("limit") limit: string) {
 ### Combinando Estático e Dinâmico
 
 ```typescript
+import { Controller, Get, Param } from "azurajs/decorators";
+
 @Controller("/api")
 export class ApiController {
   @Get("/users/:id/profile")  // GET /api/users/123/profile

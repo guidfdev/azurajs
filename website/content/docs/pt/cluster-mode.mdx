@@ -1,16 +1,291 @@
 ---
 title: Cluster Mode
-description: Utilize todos os núcleos da CPU com cluster mode
+description: Escale sua aplicação através de múltiplos núcleos de CPU automaticamente
 icon: Monitor
 ---
 
 # Cluster Mode 🖥️
 
-Cluster mode permite que sua aplicação AzuraJS utilize todos os núcleos da CPU, melhorando significativamente o desempenho e a capacidade de requisições.
+AzuraJS fornece suporte integrado ao modo cluster para escalar automaticamente sua aplicação através de todos os núcleos de CPU disponíveis, sem nenhuma configuração manual.
 
-## Básico do Cluster Mode 💡
+## Ativar Cluster Mode ⚡
 
-O Node.js executa em uma única thread por padrão. Cluster mode cria múltiplos processos worker, cada um em seu próprio núcleo de CPU.
+Simplesmente ative o cluster mode no seu arquivo de configuração e AzuraJS cuida de tudo automaticamente:
+
+```typescript title="azura.config.ts"
+import type { ConfigTypes } from "azurajs/config";
+
+const config: ConfigTypes = {
+  server: {
+    port: 3000,
+    cluster: true,  // Ativar cluster mode
+  },
+};
+
+export default config;
+```
+
+Só isso! Quando `cluster: true` está definido, AzuraJS automaticamente:
+- ✅ Detecta o número de núcleos de CPU disponíveis
+- ✅ Cria um processo worker por núcleo de CPU
+- ✅ Distribui conexões entre os workers usando round-robin
+- ✅ Reinicia automaticamente workers que crasharam
+- ✅ Gerencia o desligamento gracioso de todos os workers
+- ✅ Gerencia comunicação entre processos
+
+## Como Funciona 🔧
+
+Nenhum código de cluster manual é necessário. O código da sua aplicação permanece simples:
+
+```typescript title="index.ts"
+import { AzuraClient, applyDecorators } from "azurajs";
+import { HomeController } from "./controllers/HomeController";
+
+const app = new AzuraClient();
+
+applyDecorators(app, [HomeController]);
+
+await app.listen();
+```
+
+AzuraJS gerencia internamente toda a lógica de cluster baseado na sua configuração. O framework irá:
+
+1. Criar um processo primário que gerencia os workers
+2. Criar processos workers (um por núcleo de CPU)
+3. Cada worker executa sua aplicação independentemente
+4. O balanceamento de carga é gerenciado pelo sistema operacional
+5. Crashes de workers são detectados e novos workers são criados automaticamente
+
+**Você não precisa escrever nenhum código de cluster** - AzuraJS gerencia tudo nos bastidores.
+
+## Quando Usar Cluster Mode 📊
+
+**Use cluster mode quando:**
+- ✅ Executar em ambientes de produção
+- ✅ Lidar com alto tráfego e requisições concorrentes
+- ✅ Servidor multi-core disponível (2+ cores)
+- ✅ Precisa de melhor performance e confiabilidade
+- ✅ Quer recuperação automática de processos
+
+**Não use cluster mode quando:**
+- ❌ Desenvolvendo localmente (processo único é mais fácil de debugar)
+- ❌ Executando em sistemas single-core (sem benefício)
+- ❌ Usando orquestração de containers (Kubernetes, Docker Swarm)
+- ❌ Precisa debugar problemas específicos
+- ❌ Executando tarefas agendadas ou cron jobs
+
+## Configuração Baseada em Ambiente 🌍
+
+Ative cluster mode apenas em produção:
+
+```typescript title="azura.config.ts"
+const isProduction = process.env.NODE_ENV === "production";
+
+const config: ConfigTypes = {
+  environment: isProduction ? "production" : "development",
+  server: {
+    port: 3000,
+    cluster: isProduction,  // Cluster apenas em produção
+  },
+};
+
+export default config;
+```
+
+## Exemplo de Configuração Completa ⚙️
+
+```typescript title="azura.config.ts"
+import type { ConfigTypes } from "azurajs/config";
+
+const config: ConfigTypes = {
+  environment: "production",
+  server: {
+    port: process.env.PORT || 3000,
+    cluster: true,              // Ativar cluster mode
+    ipHost: false,
+  },
+  logging: {
+    enabled: true,
+    showDetails: true,          // Mostra IDs dos processos workers nos logs
+  },
+  plugins: {
+    cors: {
+      enabled: true,
+      origins: ["*"],
+      methods: ["GET", "POST", "PUT", "DELETE"],
+    },
+  },
+};
+
+export default config;
+```
+
+## Considerações sobre Estado Compartilhado 💾
+
+Workers executam em processos separados e não compartilham memória. Use armazenamento externo para estado compartilhado:
+
+### ❌ Não Funciona entre Workers
+
+```typescript
+// Cache em memória não será compartilhado entre workers
+const cache = new Map();
+
+@Get("/data")
+getData() {
+  if (cache.has("key")) {
+    return cache.get("key");
+  }
+  // Este cache é por-worker, não compartilhado!
+}
+```
+
+### ✅ Use Armazenamento Externo
+
+```typescript
+// Redis para cache compartilhado entre todos os workers
+import Redis from "ioredis";
+const redis = new Redis();
+
+@Get("/data")
+async getData() {
+  const cached = await redis.get("key");
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  const data = await fetchData();
+  await redis.set("key", JSON.stringify(data));
+  return data;
+}
+```
+
+**Soluções recomendadas para estado compartilhado:**
+- Redis para cache e sessões
+- PostgreSQL/MySQL para dados persistentes
+- MongoDB para armazenamento de documentos
+- Filas de mensagens externas (RabbitMQ, Kafka)
+
+## Benefícios de Performance 📈
+
+Melhorias de performance esperadas com cluster mode:
+
+| Núcleos CPU | Aumento de Throughput |
+|-------------|----------------------|
+| 2 cores     | ~1.8x               |
+| 4 cores     | ~3.5x               |
+| 8 cores     | ~6-7x               |
+| 16 cores    | ~12-14x             |
+
+Ganhos reais dependem de:
+- Operações vinculadas a I/O vs CPU
+- Sistema operacional
+- Arquitetura da aplicação
+- Condições de rede
+
+## Docker e Kubernetes 🐳
+
+Quando usar orquestração de containers, desative cluster mode e deixe o orquestrador lidar com o escalonamento:
+
+```typescript title="azura.config.ts"
+const config: ConfigTypes = {
+  server: {
+    cluster: false,  // Deixe o orquestrador lidar com o escalonamento
+  },
+};
+```
+
+Escale containers ao invés:
+
+```yaml title="docker-compose.yml"
+services:
+  api:
+    image: myapp
+    deploy:
+      replicas: 4  # Executar 4 containers
+```
+
+```yaml title="kubernetes-deployment.yml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azurajs-app
+spec:
+  replicas: 4  # Executar 4 pods
+  template:
+    spec:
+      containers:
+      - name: app
+        image: myapp
+```
+
+## Monitoramento e Logs 👀
+
+Com `logging.showDetails: true`, os logs do AzuraJS mostram informações dos workers:
+
+```
+[Worker 1] Servidor ouvindo na porta 3000 (PID: 12345)
+[Worker 2] Servidor ouvindo na porta 3000 (PID: 12346)
+[Worker 3] Servidor ouvindo na porta 3000 (PID: 12347)
+[Worker 4] Servidor ouvindo na porta 3000 (PID: 12348)
+```
+
+Quando um worker crasha e reinicia automaticamente:
+
+```
+[Primary] Worker 2 (PID: 12346) crashou
+[Primary] Iniciando novo worker...
+[Worker 5] Servidor ouvindo na porta 3000 (PID: 12350)
+```
+
+## Melhores Práticas ✨
+
+<Callout type="tip">
+  **Ative apenas em produção** - Desenvolvimento é mais fácil com um único processo
+</Callout>
+
+<Callout type="tip">
+  **Use armazenamento externo** - Redis, bancos de dados, ou filas de mensagens para estado compartilhado
+</Callout>
+
+<Callout type="warn">
+  **Teste completamente** - Comportamento pode diferir entre modo único e cluster
+</Callout>
+
+<Callout type="info">
+  **Monitore seus workers** - Acompanhe a saúde dos workers e padrões de reinício em produção
+</Callout>
+
+## Resolução de Problemas 🔍
+
+### Workers Continuam Crashando
+
+Verifique os logs da sua aplicação para identificar o erro. Problemas comuns:
+- Exceções não capturadas
+- Vazamentos de memória
+- Problemas de conexão com banco de dados
+- Falta de tratamento de erros
+
+### Comportamento Inconsistente entre Requisições
+
+Isso geralmente significa que você está usando estado em memória que não é compartilhado. Solução:
+- Mova o estado para Redis ou banco de dados
+- Garanta que todos os dados sejam armazenados externamente
+- Use arquitetura stateless
+
+### Erro de Porta Já em Uso
+
+Se você ver este erro, pode estar executando múltiplas instâncias. Verifique:
+- Nenhum outro processo na mesma porta
+- Apenas uma instância do AzuraJS executando
+- Arquivo de configuração está correto
+
+## Próximos Passos 📖
+
+<Cards>
+  <Card title="Configuração" href="/docs/pt/configuration" description="Aprenda todas as opções de configuração" />
+  <Card title="Performance" href="/docs/pt/performance" description="Otimize sua aplicação ainda mais" />
+  <Card title="Tratamento de Erros" href="/docs/pt/error-handling" description="Trate erros graciosamente" />
+</Cards>
 
 ```typescript
 import { AzuraClient } from "azurajs";

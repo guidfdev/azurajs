@@ -13,7 +13,9 @@ Proper error handling ensures your API returns meaningful responses and stays re
 Use the built-in `HttpError` class for HTTP errors:
 
 ```typescript
-import { HttpError } from "azurajs";
+import { Get, Param, Res } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
+import type { ResponseServer } from "azurajs";
 
 @Get("/:id")
 getUser(@Param("id") id: string, @Res() res: ResponseServer) {
@@ -92,8 +94,8 @@ getUser(@Param("id") id: string, @Res() res: ResponseServer) {
 Create a global error handling middleware:
 
 ```typescript
-import { HttpError } from "azurajs";
-import type { RequestHandler } from "azurajs";
+import { HttpError } from "azurajs/http-error";
+import type { RequestHandler } from "azurajs/types";
 
 export const errorHandler: RequestHandler = async (req, res, next) => {
   try {

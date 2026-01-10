@@ -15,7 +15,9 @@ Validate request bodies against TypeScript-like schemas.
 ### Basic Schema
 
 ```typescript
-import { validateSchema } from "azurajs";
+import { Post, Body, Res } from "azurajs/decorators";
+import { validateSchema } from "azurajs/validators";
+import type { ResponseServer } from "azurajs";
 
 const userSchema = {
   name: "string",
@@ -109,7 +111,9 @@ class CreateUserDto {
 ### Using DTO in Controllers
 
 ```typescript
-import { validateDto } from "azurajs";
+import { Controller, Post, Res } from "azurajs/decorators";
+import { validateDto } from "azurajs/validators";
+import type { ResponseServer } from "azurajs";
 
 @Controller("/api/users")
 export class UserController {
@@ -266,7 +270,7 @@ Create validation middleware:
 
 ```typescript
 import { z } from "zod";
-import type { RequestHandler } from "azurajs";
+import type { RequestHandler } from "azurajs/types";
 
 export function validateBody(schema: z.ZodSchema): RequestHandler {
   return async (req, res, next) => {

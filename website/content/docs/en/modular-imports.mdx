@@ -1,0 +1,220 @@
+---
+title: Modular Imports
+description: Tree-shakeable imports for optimal bundle size
+icon: Package
+---
+
+# Modular Imports 📦
+
+AzuraJS supports modular imports for better tree-shaking and smaller bundle sizes. Import only what you need!
+
+## Main Package
+
+Import everything from the main package:
+
+```typescript
+import { AzuraClient, applyDecorators } from "azurajs";
+```
+
+## Decorators
+
+Import decorators separately:
+
+```typescript
+import { Controller, Get, Post, Put, Delete, Patch } from "azurajs/decorators";
+import { Body, Param, Query, Headers, Req, Res } from "azurajs/decorators";
+```
+
+## Middleware
+
+Import middleware utilities:
+
+```typescript
+import { createLoggingMiddleware } from "azurajs/middleware";
+```
+
+## Types
+
+Import TypeScript types:
+
+```typescript
+import type { RequestServer, ResponseServer } from "azurajs";
+// Or use modular import
+import type { ConfigTypes } from "azurajs/config";
+```
+
+## Plugins
+
+Import plugins separately:
+
+```typescript
+// CORS Plugin
+import { cors } from "azurajs/cors";
+
+// Rate Limiting
+import { rateLimit } from "azurajs/rate-limit";
+```
+
+## Utilities
+
+Import utilities as needed:
+
+```typescript
+// Logger
+import { logger } from "azurajs/logger";
+
+// HTTP Error
+import { HttpError } from "azurajs/http-error";
+
+// Validators
+import { validateDto, validateSchema } from "azurajs/validators";
+
+// Cookies
+import { parseCookiesHeader, serializeCookie } from "azurajs/cookies";
+```
+
+## Router
+
+Import router separately:
+
+```typescript
+import { Router } from "azurajs/router";
+```
+
+## Complete Example
+
+```typescript
+// Main imports
+import { AzuraClient, applyDecorators } from "azurajs";
+
+// Decorators
+import { Controller, Get, Post, Body, Param, Res } from "azurajs/decorators";
+
+// Middleware
+import { createLoggingMiddleware } from "azurajs/middleware";
+
+// Utilities
+import { HttpError } from "azurajs/http-error";
+
+// Types
+import type { ResponseServer } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
+
+@Controller("/users")
+class UserController {
+  @Get("/")
+  getAll(@Res() res: ResponseServer) {
+    res.json({ users: [] });
+  }
+
+  @Get("/:id")
+  getOne(@Param("id") id: string, @Res() res: ResponseServer) {
+    if (id === "0") {
+      throw new HttpError(404, "User not found");
+    }
+    res.json({ id, name: "User" });
+  }
+
+  @Post("/")
+  create(@Body() body: any, @Res() res: ResponseServer) {
+    res.status(201).json({ id: Date.now(), ...body });
+  }
+}
+
+const app = new AzuraClient();
+app.use(createLoggingMiddleware(app.getConfig()));
+applyDecorators(app, [UserController]);
+
+await app.listen(3000);
+```
+
+## Benefits
+
+✅ **Smaller bundles** - Only import what you use  
+✅ **Faster builds** - Less code to process  
+✅ **Better organization** - Clear module boundaries  
+✅ **Tree-shaking** - Dead code elimination  
+✅ **Type safety** - Full TypeScript support
+
+## Import Comparison
+
+### Before (Bundle everything)
+
+```typescript
+import {
+  AzuraClient,
+  Controller,
+  Get,
+  Post,
+  Body,
+  HttpError,
+  logger,
+  cors,
+  rateLimit
+} from "azurajs";
+```
+
+**Bundle size:** ~50KB (everything included)
+
+### After (Modular imports)
+
+```typescript
+import { AzuraClient } from "azurajs";
+import { Controller, Get, Post, Body } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
+```
+
+**Bundle size:** ~15KB (only what you need)
+
+## Migration Guide
+
+If you're using older imports, here's how to migrate:
+
+```typescript
+// Old way
+import { validateDto } from "azurajs";
+
+// New way (recommended)
+import { validateDto } from "azurajs/validators";
+
+// Old way
+import { HttpError } from "azurajs";
+
+// New way (recommended)
+import { HttpError } from "azurajs/http-error";
+
+// Old way
+import { cors } from "azurajs";
+
+// New way (recommended)
+import { cors } from "azurajs/cors";
+```
+
+<Callout type="info">
+  **Both ways work!** The main package re-exports everything for convenience, but modular imports are recommended for production builds.
+</Callout>
+
+## Available Modules
+
+| Module | Import Path | Description |
+|--------|-------------|-------------|
+| Main | `azurajs` | Complete package |
+| Decorators | `azurajs/decorators` | All decorators |
+| Middleware | `azurajs/middleware` | Middleware utilities |
+| Router | `azurajs/router` | Router system |
+| Config | `azurajs/config` | Configuration types |
+| CORS | `azurajs/cors` | CORS plugin |
+| Rate Limit | `azurajs/rate-limit` | Rate limiting |
+| Cookies | `azurajs/cookies` | Cookie utilities |
+| Validators | `azurajs/validators` | Validation functions |
+| Logger | `azurajs/logger` | Logging utility |
+| HTTP Error | `azurajs/http-error` | Error class |
+| Types | `azurajs/types` | Common types |
+
+## Next Steps 📖
+
+<Cards>
+  <Card title="Configuration" href="/docs/en/configuration" description="Configure your application" />
+  <Card title="Performance" href="/docs/en/performance" description="Optimize bundle size" />
+  <Card title="TypeScript" href="/docs/en/typescript-support" description="Full type safety" />
+</Cards>

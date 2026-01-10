@@ -11,8 +11,8 @@ Real-world examples to help you build with AzuraJS.
 ## Complete REST API Example 🎯
 
 ```typescript title="src/index.ts"
+import { AzuraClient, applyDecorators } from "azurajs";
 import {
-  AzuraClient,
   Controller,
   Get,
   Post,
@@ -22,10 +22,9 @@ import {
   Param,
   Query,
   Res,
-  HttpError,
-  applyDecorators,
-  createLoggingMiddleware,
-} from "azurajs";
+} from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
+import { createLoggingMiddleware } from "azurajs/middleware";
 import type { ResponseServer } from "azurajs";
 
 // Types
@@ -298,7 +297,7 @@ export class AuthController {
 ## File Upload Example 📤
 
 ```typescript title="src/controllers/UploadController.ts"
-import { Controller, Post, Req, Res } from "azurajs";
+import { Controller, Post, Req, Res } from "azurajs/decorators";
 import type { RequestServer, ResponseServer } from "azurajs";
 import { writeFile, mkdir } from "fs/promises";
 import { randomUUID } from "crypto";

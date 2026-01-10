@@ -13,7 +13,7 @@ Construa sua primeira API RESTful com AzuraJS em apenas alguns minutos!
 Crie `azura.config.ts` na raiz do seu projeto:
 
 ```typescript title="azura.config.ts"
-import type { ConfigTypes } from "azurajs";
+import type { ConfigTypes } from "azurajs/config";
 
 const config: ConfigTypes = {
   environment: "development",
@@ -50,7 +50,7 @@ export default config;
 Crie `src/controllers/UserController.ts`:
 
 ```typescript title="src/controllers/UserController.ts"
-import { Controller, Get, Post, Put, Delete, Body, Param, Res } from "azurajs";
+import { Controller, Get, Post, Put, Delete, Body, Param, Res } from "azurajs/decorators";
 import type { ResponseServer } from "azurajs";
 
 // Banco de dados em memória (para fins de demonstração)
@@ -152,7 +152,8 @@ export class UserController {
 Crie `src/index.ts`:
 
 ```typescript title="src/index.ts"
-import { AzuraClient, applyDecorators, createLoggingMiddleware } from "azurajs";
+import { AzuraClient, applyDecorators } from "azurajs";
+import { createLoggingMiddleware } from "azurajs/middleware";
 import { UserController } from "./controllers/UserController";
 
 // Criar a instância da aplicação

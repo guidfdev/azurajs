@@ -13,7 +13,8 @@ AzuraJS fornece ferramentas poderosas para tratar erros de forma consistente e e
 Use `HttpError` para lançar erros HTTP com códigos de status:
 
 ```typescript
-import { HttpError } from "azurajs";
+import { Get, Param } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
 
 @Get("/:id")
 getUser(@Param("id") id: string) {

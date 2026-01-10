@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/_next/'],
       },
     ],
-    sitemap: 'https://azurajs.org/sitemap.xml',
+    sitemap: 'https://azura.js.org/sitemap.xml',
   };
 }

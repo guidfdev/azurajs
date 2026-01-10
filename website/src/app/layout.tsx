@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://azurajs.org"),
+  metadataBase: new URL("https://azura.js.org"),
   title: {
     default: "AzuraJS - Minimal Decorator-Based Framework for Node.js & Bun",
     template: "%s | AzuraJS",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://azurajs.org",
+    url: "https://azura.js.org",
     title: "AzuraJS - Minimal Decorator-Based Framework",
     description:
       "Build faster with AzuraJS. The minimal, decorator-based framework for Node.js & Bun with full type-safety.",
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/logo.png",
-        width: 1200,
-        height: 630,
+        width: 512,
+        height: 512,
         alt: "AzuraJS Framework",
       },
     ],

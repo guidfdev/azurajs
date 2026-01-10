@@ -57,8 +57,8 @@ export interface UpdateUserDto {
 
 ```typescript
 // controllers/UserController.ts
-import { Controller, Get, Post, Put, Delete, Body, Param, Res } from "azurajs";
-import { HttpError } from "azurajs";
+import { Controller, Get, Post, Put, Delete, Body, Param, Res } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
 import { hashPassword, comparePassword } from "../utils/crypto";
 
 @Controller("/api/users")
@@ -141,9 +141,10 @@ export class UserController {
 
 ```typescript
 // controllers/AuthController.ts
-import { Controller, Post, Get, Body, Headers, Res } from "azurajs";
+import { Controller, Post, Get, Body, Headers, Res } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
+import type { ResponseServer } from "azurajs";
 import { sign, verify } from "jsonwebtoken";
-import { HttpError } from "azurajs";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -275,7 +276,9 @@ export function authMiddleware(
 ## Upload de Arquivos 📤
 
 ```typescript
-import { Controller, Post, Req, Res } from "azurajs";
+import { Controller, Post, Req, Res } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
+import type { RequestServer, ResponseServer } from "azurajs";
 import { writeFile } from "fs/promises";
 import { randomUUID } from "crypto";
 
@@ -561,7 +564,7 @@ import { UploadController } from "./controllers/UploadController";
 // Middleware
 import { authMiddleware } from "./middleware/auth";
 import { errorHandler } from "./middleware/errorHandler";
-import { LoggingMiddleware } from "azurajs";
+import { LoggingMiddleware } from "azurajs/middleware";
 
 const PORT = process.env.PORT || 3000;
 const numCPUs = cpus().length;
@@ -710,7 +713,7 @@ describe("Auth API", () => {
 ## Próximos Passos 📖
 
 <Cards>
-  <Card title="GitHub" href="https://github.com/yourusername/azurajs" description="Contribua no GitHub" />
+  <Card title="GitHub" href="https://github.com/0xviny/azurajs" description="Contribua no GitHub" />
   <Card title="NPM" href="https://www.npmjs.com/package/azurajs" description="Instale via NPM" />
   <Card title="Documentação" href="/docs" description="Explore toda a documentação" />
 </Cards>

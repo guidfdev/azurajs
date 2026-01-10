@@ -21,6 +21,8 @@ Define uma classe controller com um caminho base opcional.
 **Exemplos:**
 
 ```typescript
+import { Controller } from "azurajs/decorators";
+
 // Com prefixo
 @Controller("/api/users")
 export class UserController {}
@@ -49,6 +51,8 @@ Define uma rota GET.
 **Exemplos:**
 
 ```typescript
+import { Controller, Get } from "azurajs/decorators";
+
 @Controller("/api/users")
 export class UserController {
   @Get()  // GET /api/users
@@ -73,6 +77,8 @@ Define uma rota POST.
 **Exemplo:**
 
 ```typescript
+import { Post, Body } from "azurajs/decorators";
+
 @Post()  // POST /api/users
 createUser(@Body() data: any) {
   return { id: Date.now(), ...data };

@@ -19,6 +19,8 @@
     "cluster-mode",
     "error-handling",
     "---Advanced---",
+    "custom-servers",
+    "modular-imports",
     "typescript-support",
     "performance",
     "---Examples---",

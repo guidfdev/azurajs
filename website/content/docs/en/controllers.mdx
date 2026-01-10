@@ -13,7 +13,7 @@ Controllers are the heart of AzuraJS applications. They organize your route hand
 A controller is a class decorated with `@Controller` that groups related route handlers together. Each method in the controller handles a specific route.
 
 ```typescript
-import { Controller, Get, Post } from "azurajs";
+import { Controller, Get, Post } from "azurajs/decorators";
 
 @Controller("/api/products")
 export class ProductController {
@@ -81,7 +81,7 @@ import {
   Body, 
   Param, 
   Res 
-} from "azurajs";
+} from "azurajs/decorators";
 import type { ResponseServer } from "azurajs";
 
 @Controller("/api/users")
@@ -299,7 +299,9 @@ export class UserController {
 Use try-catch blocks and consistent error responses:
 
 ```typescript
-import { HttpError } from "azurajs";
+import { Controller, Post, Body, Res } from "azurajs/decorators";
+import { HttpError } from "azurajs/http-error";
+import type { ResponseServer } from "azurajs";
 
 @Controller("/api/users")
 export class UserController {

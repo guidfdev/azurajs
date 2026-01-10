@@ -10,28 +10,28 @@ Aprenda técnicas e melhores práticas para maximizar o desempenho da sua aplica
 
 ## Cluster Mode 🖥️
 
-A maneira mais eficaz de melhorar o desempenho é usar cluster mode para utilizar todos os núcleos da CPU:
+A maneira mais eficaz de melhorar o desempenho é ativar cluster mode - simplesmente defina na configuração e AzuraJS cuida de tudo automaticamente:
 
-```typescript
-import cluster from "cluster";
-import { cpus } from "os";
+```typescript title="azura.config.ts"
+import type { ConfigTypes } from "azurajs/config";
 
-if (cluster.isPrimary) {
-  const numCPUs = cpus().length;
-  
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
-} else {
-  const app = new AzuraClient();
-  await app.listen(3000);
-}
+const config: ConfigTypes = {
+  server: {
+    cluster: true,  // AzuraJS utiliza automaticamente todos os núcleos da CPU
+  },
+};
+
+export default config;
 ```
 
 **Ganhos esperados:**
 - 4 cores: ~3.5x throughput
 - 8 cores: ~7x throughput
 - 16 cores: ~14x throughput
+
+**Nenhum código manual necessário** - AzuraJS automaticamente cria workers, distribui carga e gerencia crashes.
+
+Veja o [guia completo de Cluster Mode](/docs/pt/cluster-mode) para todos os detalhes.
 
 ## Caching Estratégico 💾
 

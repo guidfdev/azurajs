@@ -114,6 +114,213 @@ export class AzuraClient {
       logger("info", `[${who}] listening on http://localhost:${port}`);
       if (this.opts.server?.ipHost) getIP(port);
     });
+
+    return this.server;
+  }
+
+  /**
+   * Fetch handler compatible with Web API (Bun, Deno, Cloudflare Workers, etc.)
+   * @example
+   * ```typescript
+   * const app = new AzuraClient();
+   * app.get('/', (req, res) => res.text('Hello World!'));
+   * 
+   * // Use with Bun
+   * Bun.serve({
+   *   port: 3000,
+   *   fetch: app.fetch.bind(app),
+   * });
+   * 
+   * // Use with Deno
+   * Deno.serve({ port: 3000 }, app.fetch.bind(app));
+   * ```
+   */
+  public async fetch(request: Request): Promise<Response> {
+    await this.initPromise;
+
+    const url = new URL(request.url);
+    const [urlPath, qs] = url.pathname.split("?");
+    
+    // Parse query
+    const rawQuery = parseQS(url.search.slice(1) || "");
+    const safeQuery: Record<string, string> = {};
+    for (const k in rawQuery) {
+      const v = rawQuery[k];
+      safeQuery[k] = Array.isArray(v) ? v[0] || "" : (v as string) || "";
+    }
+
+    const cookieHeader = request.headers.get("cookie") || "";
+    const cookies = parseCookiesHeader(cookieHeader);
+
+    let body: any = {};
+    if (["POST", "PUT", "PATCH"].includes(request.method.toUpperCase())) {
+      const contentType = request.headers.get("content-type") || "";
+      try {
+        if (contentType.includes("application/json")) {
+          body = await request.json();
+        } else if (contentType.includes("application/x-www-form-urlencoded")) {
+          const text = await request.text();
+          const parsed = parseQS(text || "");
+          const b: Record<string, string> = {};
+          for (const k in parsed) {
+            const v = parsed[k];
+            b[k] = Array.isArray(v) ? v[0] || "" : (v as string) || "";
+          }
+          body = b;
+        } else {
+          body = await request.text();
+        }
+      } catch {
+        body = {};
+      }
+    }
+
+    const protocol = url.protocol.slice(0, -1) as "http" | "https";
+    
+    const headersObj: Record<string, string | string[]> = {};
+    request.headers.forEach((value, key) => {
+      headersObj[key] = value;
+    });
+    
+    const rawReq: Partial<RequestServer> = {
+      method: request.method,
+      url: url.pathname + url.search,
+      originalUrl: url.pathname + url.search,
+      path: urlPath || "/",
+      protocol,
+      secure: url.protocol === "https:",
+      hostname: url.hostname,
+      subdomains: url.hostname ? url.hostname.split(".").slice(0, -2) : [],
+      query: safeQuery,
+      cookies,
+      params: {},
+      body,
+      headers: headersObj as any,
+      get: (name: string) => request.headers.get(name.toLowerCase()) || undefined,
+      header: (name: string) => request.headers.get(name.toLowerCase()) || undefined,
+      ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "",
+      ips: request.headers.get("x-forwarded-for")?.split(/\s*,\s*/) || [],
+    };
+
+    // Response builder
+    let statusCode = 200;
+    const responseHeaders = new Headers();
+    let responseBody: any = null;
+
+    const rawRes: Partial<ResponseServer> = {
+      statusCode,
+      status: (code: number) => {
+        statusCode = code;
+        return rawRes as ResponseServer;
+      },
+      set: (field: string, value: string | number | string[]) => {
+        responseHeaders.set(field, String(value));
+        return rawRes as ResponseServer;
+      },
+      header: (field: string, value: string | number | string[]) => {
+        responseHeaders.set(field, String(value));
+        return rawRes as ResponseServer;
+      },
+      get: (field: string) => responseHeaders.get(field) || undefined,
+      type: (t: string) => {
+        responseHeaders.set("Content-Type", t);
+        return rawRes as ResponseServer;
+      },
+      contentType: (t: string) => {
+        responseHeaders.set("Content-Type", t);
+        return rawRes as ResponseServer;
+      },
+      location: (u: string) => {
+        responseHeaders.set("Location", u);
+        return rawRes as ResponseServer;
+      },
+      redirect: ((a: number | string, b?: string) => {
+        if (typeof a === "number") {
+          statusCode = a;
+          responseHeaders.set("Location", b!);
+        } else {
+          statusCode = 302;
+          responseHeaders.set("Location", a);
+        }
+        return rawRes as ResponseServer;
+      }) as ResponseServer["redirect"],
+      cookie: (name: string, val: string, opts: CookieOptions = {}) => {
+        const s = serializeCookie(name, val, opts);
+        const prev = responseHeaders.get("Set-Cookie");
+        if (prev) {
+          responseHeaders.append("Set-Cookie", s);
+        } else {
+          responseHeaders.set("Set-Cookie", s);
+        }
+        return rawRes as ResponseServer;
+      },
+      clearCookie: (name: string, opts: CookieOptions = {}) => {
+        return rawRes.cookie!(name, "", { ...opts, expires: new Date(1), maxAge: 0 });
+      },
+      send: (b: any) => {
+        if (b === undefined || b === null) {
+          responseBody = "";
+        } else if (typeof b === "object") {
+          responseHeaders.set("Content-Type", "application/json");
+          responseBody = JSON.stringify(b);
+        } else {
+          responseBody = String(b);
+        }
+        return rawRes as ResponseServer;
+      },
+      json: (b: any) => {
+        responseHeaders.set("Content-Type", "application/json");
+        responseBody = JSON.stringify(b);
+        return rawRes as ResponseServer;
+      },
+    };
+
+    const errorHandler = (err: any) => {
+      statusCode = err instanceof HttpError ? err.status : 500;
+      responseHeaders.set("Content-Type", "application/json");
+      responseBody = JSON.stringify(
+        err instanceof HttpError
+          ? err.payload ?? { error: err.message || "Internal Server Error" }
+          : { error: err?.message || "Internal Server Error" }
+      );
+    };
+
+    try {
+      const { handlers, params } = this.router.find(request.method, urlPath || "/");
+      rawReq.params = params || {};
+      
+      const chain = [
+        ...this.middlewares.map(adaptRequestHandler),
+        ...handlers.map(adaptRequestHandler),
+      ];
+      
+      let idx = 0;
+      const next = async (err?: any) => {
+        if (err) return errorHandler(err);
+        if (idx >= chain.length) return;
+        const fn = chain[idx++];
+        try {
+          await fn({
+            request: rawReq as RequestServer,
+            response: rawRes as ResponseServer,
+            req: rawReq as RequestServer,
+            res: rawRes as ResponseServer,
+            next,
+          });
+        } catch (e) {
+          return errorHandler(e);
+        }
+      };
+      
+      await next();
+    } catch (err) {
+      errorHandler(err);
+    }
+
+    return new Response(responseBody, {
+      status: statusCode,
+      headers: responseHeaders,
+    });
   }
 
   private async handle(rawReq: RequestServer, rawRes: ResponseServer) {

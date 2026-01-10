@@ -13,6 +13,9 @@ Middleware permite interceptar e processar requisições antes de chegarem aos s
 Middleware é uma função que tem acesso aos objetos request e response, e à função next no ciclo request-response.
 
 ```typescript
+import type { RequestHandler } from "azurajs/types";
+import type { RequestServer, ResponseServer } from "azurajs";
+
 type RequestHandler = (
   req: RequestServer,
   res: ResponseServer,
@@ -53,7 +56,8 @@ app.use((req, res, next) => {
 Registra detalhes das requisições:
 
 ```typescript
-import { AzuraClient, LoggingMiddleware } from "azurajs";
+import { AzuraClient } from "azurajs";
+import { LoggingMiddleware } from "azurajs/middleware";
 
 const app = new AzuraClient();
 app.use(LoggingMiddleware);

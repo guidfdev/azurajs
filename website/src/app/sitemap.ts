@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { getSource } from '@/lib/source';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://azurajs.org';
+  const baseUrl = 'https://azura.js.org';
   
   const enSource = getSource('en');
   const ptSource = getSource('pt');
