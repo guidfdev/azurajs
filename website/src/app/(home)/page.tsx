@@ -18,6 +18,7 @@ import {
   Check,
   Star,
 } from "lucide-react";
+import { GetStartedButton } from "./get-started-button";
 
 export default function HomePage() {
   return (
@@ -52,10 +53,7 @@ export default function HomePage() {
 
           {/* Buttons Area */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <button className="h-12 px-8 rounded-full bg-white text-black font-semibold hover:bg-neutral-200 transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
-              Get Started
-              <ArrowRight size={18} />
-            </button>
+            <GetStartedButton />
 
             <Link
               href="https://github.com/0xviny/azurajs"
