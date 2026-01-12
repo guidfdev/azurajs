@@ -94,7 +94,7 @@ export function applyDecorators(app: AzuraClient, controllers: Array<new () => a
       const handler = async (
         req: RequestServer,
         res: ResponseServer,
-        next: (err?: unknown) => void
+        next?: (err?: unknown) => void
       ) => {
         try {
           const params = (r.params ?? []).slice().sort((a, b) => a.index - b.index);
@@ -131,7 +131,7 @@ export function applyDecorators(app: AzuraClient, controllers: Array<new () => a
           const result = fn(...args);
           if (result instanceof Promise) await result;
         } catch (err) {
-          next(err);
+          if (next) next(err);
         }
       };
 
